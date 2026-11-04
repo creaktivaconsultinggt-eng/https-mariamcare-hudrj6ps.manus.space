@@ -51,17 +51,39 @@
   <title>
    Dra. Mariam Melgar | Pediatría con confianza
   </title>
-  <script src="js/index-CvRTLfN6.js" type="module">
+  <script src="js/index-8e35-PBh.js" type="module">
   </script>
-  <link crossorigin="" href="css/index-D-037kyy.css" rel="stylesheet">
+  <link crossorigin="" href="css/index-CuSniG19.css" rel="stylesheet">
   <script type="module">
    if (window.self === window.top) {
   let lastPath = "";
+  // The visitor's analytics_storage choice from window.__b44Consent; null until one is known.
+  let consentGranted = null;
   function getPageNameFromPath(path) {
     const segments = path.split("/").filter(Boolean);
     return segments[0] || null;
   }
+  // Same rules as @base44/sdk analytics. Read on every send: the server sets the meta.
+  function analyticsMode() {
+    const meta = document.querySelector('meta[name="base44-analytics"]');
+    return meta ? meta.getAttribute("content") : null;
+  }
+  function deniedBefore() {
+    try {
+      return window.localStorage.getItem("base44_analytics_denied") === "1";
+    } catch (e) {
+      return false;
+    }
+  }
+  function mayTrack() {
+    const mode = analyticsMode();
+    if (mode === "off") return false;
+    if (mode === "consent") return consentGranted === true;
+    if (mode === "on") return consentGranted === null ? !deniedBefore() : consentGranted;
+    return true;
+  }
   function trackPageView() {
+    if (!mayTrack()) return;
     const path = window.location.pathname;
     if (path === lastPath) return;
     lastPath = path;
@@ -83,6 +105,24 @@
     trackPageView();
   };
   window.addEventListener("popstate", trackPageView);
+  // A module script runs after the head's classic scripts, so the listener exists by now.
+  // Without it, "consent" never sends and "on" relies on the saved Decline only.
+  try {
+    if (window.__b44Consent) {
+      window.__b44Consent.on(
+        "analytics_storage",
+        function () {
+          consentGranted = true;
+          trackPageView();
+        },
+        function () {
+          consentGranted = false;
+          // A later grant sends the page the visitor is on, even one they saw before.
+          lastPath = "";
+        }
+      );
+    }
+  } catch (e) {}
   trackPageView();
 }
   </script>
@@ -122,6 +162,43 @@
       if (category in state) notify(listener);
     },
   };
+})();
+  </script>
+  <meta content="on" data-source="default" name="base44-visitor-tracking">
+  <script id="b44-visitor-tracking">
+   (function () {
+  try {
+    if (window.top !== window) return;
+    var CONSENT_CATEGORY = "analytics_storage";
+    var attributes = "; Path=/; Secure; SameSite=Lax";
+    var keep = "; Max-Age=2592000" + attributes;
+    // Read now: the app's router may drop ?ref= before the visitor consents.
+    var referrerId = new URLSearchParams(window.location.search).get("ref");
+    var referrerOrigin = document.referrer && new URL(document.referrer).origin;
+    function write() {
+      if (referrerId && /^[0-9a-f]{24}$/i.test(referrerId)) {
+        document.cookie = "base44_referrer_id=" + referrerId + keep;
+      }
+      // First touch: a return from a sign-in or checkout page must not replace who sent the visitor.
+      var hasOrigin = /(?:^|;\s*)base44_referrer_origin=/.test(document.cookie);
+      if (!hasOrigin && /^https?:\/\//.test(referrerOrigin) && referrerOrigin !== window.location.origin) {
+        document.cookie = "base44_referrer_origin=" + referrerOrigin + keep;
+      }
+    }
+    function clear() {
+      document.cookie = "base44_referrer_id=; Max-Age=0" + attributes;
+      document.cookie = "base44_referrer_origin=; Max-Age=0" + attributes;
+    }
+    var meta = document.querySelector('meta[name="base44-visitor-tracking"]');
+    // Global Privacy Control opts the visitor out of tracking Base44 turned on by default.
+    if (meta && meta.getAttribute("data-source") === "default" && navigator.globalPrivacyControl) {
+      clear();
+    } else if (meta && meta.content === "consent") {
+      window.__b44Consent.on(CONSENT_CATEGORY, write, clear);
+    } else {
+      write();
+    }
+  } catch (e) {}
 })();
   </script>
   <meta content="yes" name="mobile-web-app-capable">
