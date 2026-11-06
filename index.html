@@ -51,9 +51,9 @@
   <title>
    Dra. Mariam Melgar | Pediatría con confianza
   </title>
-  <script src="js/index-sgjLKRGv.js" type="module">
+  <script src="js/index-DOkPyA7-.js" type="module">
   </script>
-  <link crossorigin="" href="css/index-B5JfmyDA.css" rel="stylesheet">
+  <link crossorigin="" href="css/index-DGbc7l51.css" rel="stylesheet">
   <script type="module">
    if (window.self === window.top) {
   let lastPath = "";
@@ -190,8 +190,13 @@
       document.cookie = "base44_referrer_origin=; Max-Age=0" + attributes;
     }
     var meta = document.querySelector('meta[name="base44-visitor-tracking"]');
+    var signal = navigator.globalPrivacyControl;
     // Global Privacy Control opts the visitor out of tracking Base44 turned on by default.
-    if (meta && meta.getAttribute("data-source") === "default" && navigator.globalPrivacyControl) {
+    var optOut = meta && meta.getAttribute("data-source") === "default" && signal;
+    if (meta && meta.getAttribute("data-privacy-signals") === "honor") {
+      optOut = signal || navigator.doNotTrack === "1";
+    }
+    if (optOut) {
       clear();
     } else if (meta && meta.content === "consent") {
       window.__b44Consent.on(CONSENT_CATEGORY, write, clear);
